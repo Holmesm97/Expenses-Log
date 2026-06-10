@@ -98,8 +98,12 @@ input:focus,select:focus{border-color:#1565c0}
     </select>
   </div>
   <div class="field">
-    <label class="lbl">Description</label>
-    <input type="text" id="desc" placeholder="e.g. Tesco, Amazon, BP…" maxlength="60" autocomplete="off">
+    <label class="lbl">Vendor</label>
+    <input type="text" id="vendor" placeholder="e.g. Tesco, Amazon, BP…" maxlength="60" autocomplete="off">
+  </div>
+  <div class="field">
+    <label class="lbl">Items / Description</label>
+    <input type="text" id="desc" placeholder="e.g. Weekly shop, fuel, printer ink…" maxlength="60" autocomplete="off">
   </div>
   <div class="field">
     <label class="lbl">Amount</label>
@@ -186,17 +190,19 @@ document.getElementById("pay-grid").addEventListener("click", function(e) {
 // Save
 document.getElementById("save-btn").addEventListener("click", function() {
   var cat = document.getElementById("cat").value;
+  var vendor = document.getElementById("vendor").value.trim();
   var desc = document.getElementById("desc").value.trim();
   var amt = parseFloat(document.getElementById("amt").value);
   var dt = document.getElementById("dt").value;
   if(!cat){alert("Please select a category.");return;}
-  if(!desc){alert("Please enter a description.");return;}
+  if(!vendor){alert("Please enter a vendor.");return;}
   if(!amt||amt<=0){alert("Please enter a valid amount.");return;}
   if(!paySel){alert("Please select a payment method.");return;}
   var entries = load();
-  entries.unshift({id:Date.now(),cat:cat,desc:desc,amt:amt,pay:paySel,dt:dt});
+  entries.unshift({id:Date.now(),cat:cat,vendor:vendor,desc:desc,amt:amt,pay:paySel,dt:dt});
   store(entries);
   document.getElementById("cat").value="";
+  document.getElementById("vendor").value="";
   document.getElementById("desc").value="";
   document.getElementById("amt").value="";
   document.getElementById("dt").value=today();
@@ -270,8 +276,8 @@ function renderLog() {
       return '<div class="entry">'+
         '<div class="entry-left">'+
           '<div class="entry-cat">'+e.cat+'</div>'+
-          '<div class="entry-desc">'+e.desc+'</div>'+
-          '<div class="entry-meta">'+fmtDate(e.dt)+'</div>'+
+          '<div class="entry-desc">'+(e.vendor||"")+'</div>'+
+          '<div class="entry-meta">'+(e.desc?e.desc+" · ":"")+fmtDate(e.dt)+'</div>'+
         '</div>'+
         '<div class="entry-right">'+
           '<div class="entry-amt">'+fmtAmt(e.amt)+'</div>'+
@@ -328,8 +334,8 @@ function renderLog() {
 document.getElementById("export-btn").addEventListener("click", function(){
   var all = load();
   if(!all.length){alert("No entries to export.");return;}
-  var rows = ["Date,Category,Description,Amount,Payment Method"].concat(
-    all.map(function(e){return e.dt+',"'+e.cat+'","'+e.desc+'",'+e.amt+',"'+e.pay+'"';})
+  var rows = ["Date,Category,Vendor,Description,Amount,Payment Method"].concat(
+    all.map(function(e){return e.dt+',"'+e.cat+'","'+(e.vendor||"")+'","'+(e.desc||"")+'",'+e.amt+',"'+e.pay+'"';})
   );
   var blob = new Blob([rows.join("\n")],{type:"text/csv"});
   var a = document.createElement("a");
