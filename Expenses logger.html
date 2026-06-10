@@ -317,7 +317,6 @@ function renderLog() {
     }
     var del = e.target.closest(".del-btn");
     if(del){
-      if(!confirm("Delete this entry?")) return;
       var id = parseInt(del.getAttribute("data-id"));
       store(load().filter(function(x){return x.id!==id;}));
       renderLog();
@@ -340,3 +339,4 @@ document.getElementById("export-btn").addEventListener("click", function(){
 });
 </script>
 </body>
+</html>
