@@ -260,12 +260,6 @@ function renderLog() {
   fDiv.innerHTML=usedCats.map(function(c){
     return '<button class="fbtn'+(c===filterCat?" on":"")+'" data-cat="'+c+'">'+c+'</button>';
   }).join("");
-  fDiv.addEventListener("click",function(e){
-    var btn=e.target.closest(".fbtn");
-    if(!btn) return;
-    filterCat=btn.getAttribute("data-cat");
-    renderLog();
-  });
 
   var shown=filterCat==="All"?all:all.filter(function(e){return e.cat===filterCat;});
   document.getElementById("log-title").textContent=filterCat==="All"?"Expense Log ("+all.length+")":filterCat+" ("+shown.length+")";
@@ -323,52 +317,61 @@ function renderLog() {
       '<div class="period-entries'+(isOld?"":" on")+'" data-pent="'+p+'">'+entryRows+'</div>'+
     '</div>';
   });
-
   eDiv.innerHTML=html;
-
-  eDiv.addEventListener("click",function(e){
-    var hdr=e.target.closest(".period-hdr");
-    if(hdr){
-      var p=hdr.getAttribute("data-period");
-      var sum=eDiv.querySelector('[data-summary="'+p+'"]');
-      var ent=eDiv.querySelector('[data-pent="'+p+'"]');
-      var chev=hdr.querySelector(".period-chevron");
-      var open=sum.classList.contains("on");
-      sum.classList.toggle("on",!open);
-      ent.classList.toggle("on",!open);
-      chev.textContent=open?"▼":"▲";
-      return;
-    }
-    var editBtn=e.target.closest(".edit-btn");
-    if(editBtn){
-      var id=parseInt(editBtn.getAttribute("data-id"));
-      var entry=load().find(function(x){return x.id===id;});
-      if(!entry) return;
-      editingId=id;
-      document.getElementById("cat").value=entry.cat||"";
-      document.getElementById("vendor").value=entry.vendor||"";
-      document.getElementById("desc").value=entry.desc||"";
-      document.getElementById("amt").value=entry.amt||"";
-      document.getElementById("dt").value=entry.dt||today();
-      document.querySelectorAll(".pbtn").forEach(function(b){
-        b.classList.toggle("on",b.getAttribute("data-pay")===entry.pay);
-      });
-      paySel=entry.pay||"";
-      document.getElementById("save-btn").textContent="Update Entry";
-      document.getElementById("cancel-btn").style.display="block";
-      document.getElementById("tab-add").click();
-      window.scrollTo(0,0);
-      return;
-    }
-    var delBtn=e.target.closest(".del-btn");
-    if(delBtn){
-      var id=parseInt(delBtn.getAttribute("data-id"));
-      if(!confirm("Delete this entry?")) return;
-      store(load().filter(function(x){return x.id!==id;}));
-      renderLog();
-    }
-  });
 }
+
+// Filters — set up once
+document.getElementById("filters").addEventListener("click",function(e){
+  var btn=e.target.closest(".fbtn");
+  if(!btn) return;
+  filterCat=btn.getAttribute("data-cat");
+  renderLog();
+});
+
+// Entries — set up once
+document.getElementById("entries").addEventListener("click",function(e){
+  var eDiv=document.getElementById("entries");
+  var hdr=e.target.closest(".period-hdr");
+  if(hdr){
+    var p=hdr.getAttribute("data-period");
+    var sum=eDiv.querySelector('[data-summary="'+p+'"]');
+    var ent=eDiv.querySelector('[data-pent="'+p+'"]');
+    var chev=hdr.querySelector(".period-chevron");
+    var open=sum.classList.contains("on");
+    sum.classList.toggle("on",!open);
+    ent.classList.toggle("on",!open);
+    chev.textContent=open?"▼":"▲";
+    return;
+  }
+  var editBtn=e.target.closest(".edit-btn");
+  if(editBtn){
+    var id=parseInt(editBtn.getAttribute("data-id"));
+    var entry=load().find(function(x){return x.id===id;});
+    if(!entry) return;
+    editingId=id;
+    document.getElementById("cat").value=entry.cat||"";
+    document.getElementById("vendor").value=entry.vendor||"";
+    document.getElementById("desc").value=entry.desc||"";
+    document.getElementById("amt").value=entry.amt||"";
+    document.getElementById("dt").value=entry.dt||today();
+    document.querySelectorAll(".pbtn").forEach(function(b){
+      b.classList.toggle("on",b.getAttribute("data-pay")===entry.pay);
+    });
+    paySel=entry.pay||"";
+    document.getElementById("save-btn").textContent="Update Entry";
+    document.getElementById("cancel-btn").style.display="block";
+    document.getElementById("tab-add").click();
+    window.scrollTo(0,0);
+    return;
+  }
+  var delBtn=e.target.closest(".del-btn");
+  if(delBtn){
+    var id=parseInt(delBtn.getAttribute("data-id"));
+    if(!confirm("Delete this entry?")) return;
+    store(load().filter(function(x){return x.id!==id;}));
+    renderLog();
+  }
+});
 
 document.getElementById("export-btn").addEventListener("click",function(){
   var all=load();
