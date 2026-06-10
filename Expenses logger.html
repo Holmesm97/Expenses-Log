@@ -40,8 +40,7 @@ input:focus,select:focus{border-color:#1565c0}
 .log-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .log-hdr h2{font-size:16px;font-weight:700}
 .exp-btn{padding:8px 14px;border-radius:20px;border:1.5px solid #1565c0;background:#fff;color:#1565c0;font-size:12px;font-weight:700;cursor:pointer}
-.filter-row{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px}
-.filter-row::-webkit-scrollbar{display:none}
+.filter-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
 .fbtn{flex-shrink:0;padding:7px 14px;border-radius:20px;border:1.5px solid #ddd;background:#fff;font-size:12px;font-weight:600;color:#666;cursor:pointer;white-space:nowrap}
 .fbtn.on{border-color:#1565c0;background:#e8f0fe;color:#1565c0}
 
@@ -105,7 +104,8 @@ input:focus,select:focus{border-color:#1565c0}
   </div>
   <div class="field">
     <label class="lbl">Items / Description</label>
-    <input type="text" id="desc" placeholder="e.g. Weekly shop, fuel, printer ink…" maxlength="60" autocomplete="off">
+    <input type="text" id="desc" placeholder="e.g. Weekly shop, fuel, printer ink…" maxlength="60" autocomplete="off" list="desc-list">
+    <datalist id="desc-list"></datalist>
   </div>
   <div class="field">
     <label class="lbl">Amount</label>
@@ -160,8 +160,9 @@ populateVendors();
 
 function populateVendors() {
   var vendors = [...new Set(load().map(function(e){return e.vendor||"";}).filter(Boolean))].sort();
-  var dl = document.getElementById("vendor-list");
-  dl.innerHTML = vendors.map(function(v){return '<option value="'+v+'">';}).join("");
+  document.getElementById("vendor-list").innerHTML = vendors.map(function(v){return '<option value="'+v+'">';}).join("");
+  var descs = [...new Set(load().map(function(e){return e.desc||"";}).filter(Boolean))].sort();
+  document.getElementById("desc-list").innerHTML = descs.map(function(d){return '<option value="'+d+'">';}).join("");
 }
 
 function today() {
