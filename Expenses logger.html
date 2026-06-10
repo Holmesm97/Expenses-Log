@@ -99,7 +99,8 @@ input:focus,select:focus{border-color:#1565c0}
   </div>
   <div class="field">
     <label class="lbl">Vendor</label>
-    <input type="text" id="vendor" placeholder="e.g. Tesco, Amazon, BP…" maxlength="60" autocomplete="off">
+    <input type="text" id="vendor" placeholder="e.g. Tesco, Amazon, BP…" maxlength="60" autocomplete="off" list="vendor-list">
+    <datalist id="vendor-list"></datalist>
   </div>
   <div class="field">
     <label class="lbl">Items / Description</label>
@@ -115,9 +116,16 @@ input:focus,select:focus{border-color:#1565c0}
   <div class="field">
     <label class="lbl">Payment Method</label>
     <div class="pay-grid" id="pay-grid">
-      <button class="pbtn" data-pay="Debit Card">💳 Debit Card</button>
-      <button class="pbtn" data-pay="Credit Card">💳 Credit Card</button>
-      <button class="pbtn" data-pay="Online">🌐 Online</button>
+      <button class="pbtn" data-pay="Barclays Debit" style="background:linear-gradient(135deg,#00395d,#0077b6);color:#fff;border-color:#00395d;padding:14px 8px">
+        <div style="font-size:15px;margin-bottom:3px">🦅</div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:0.05em">BARCLAYS</div>
+        <div style="font-size:10px;opacity:0.8;margin-top:2px">Debit</div>
+      </button>
+      <button class="pbtn" data-pay="Amex" style="background:linear-gradient(135deg,#b0b8c1,#e8eaed);color:#1a1a2e;border-color:#aaa;padding:14px 8px">
+        <div style="font-size:15px;margin-bottom:3px">💳</div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:0.05em">AMEX</div>
+        <div style="font-size:10px;opacity:0.7;margin-top:2px">Silver</div>
+      </button>
       <button class="pbtn" data-pay="BACS">🏦 BACS</button>
     </div>
   </div>
@@ -126,6 +134,7 @@ input:focus,select:focus{border-color:#1565c0}
     <input type="date" id="dt">
   </div>
   <button class="submit" id="save-btn">Save Entry</button>
+  <button id="cancel-btn" style="display:none;width:100%;padding:13px;background:#fff;color:#666;border:1.5px solid #ddd;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px">Cancel Edit</button>
   <div class="toast" id="toast">✓ Saved!</div>
 </div>
 
@@ -142,9 +151,17 @@ input:focus,select:focus{border-color:#1565c0}
 <script>
 var paySel = "";
 var filterCat = "All";
+var editingId = null;
 
 // Init date
 document.getElementById("dt").value = today();
+populateVendors();
+
+function populateVendors() {
+  var vendors = [...new Set(load().map(function(e){return e.vendor||"";}).filter(Boolean))].sort();
+  var dl = document.getElementById("vendor-list");
+  dl.innerHTML = vendors.map(function(v){return '<option value="'+v+'">';}).join("");
+}
 
 function today() {
   var d = new Date();
@@ -188,6 +205,19 @@ document.getElementById("pay-grid").addEventListener("click", function(e) {
 });
 
 // Save
+document.getElementById("cancel-btn").addEventListener("click", function() {
+  editingId = null;
+  document.getElementById("save-btn").textContent = "Save Entry";
+  document.getElementById("cancel-btn").style.display = "none";
+  document.getElementById("cat").value="";
+  document.getElementById("vendor").value="";
+  document.getElementById("desc").value="";
+  document.getElementById("amt").value="";
+  document.getElementById("dt").value=today();
+  document.querySelectorAll(".pbtn").forEach(function(b){b.classList.remove("on");});
+  paySel="";
+});
+
 document.getElementById("save-btn").addEventListener("click", function() {
   var cat = document.getElementById("cat").value;
   var vendor = document.getElementById("vendor").value.trim();
@@ -199,8 +229,16 @@ document.getElementById("save-btn").addEventListener("click", function() {
   if(!amt||amt<=0){alert("Please enter a valid amount.");return;}
   if(!paySel){alert("Please select a payment method.");return;}
   var entries = load();
-  entries.unshift({id:Date.now(),cat:cat,vendor:vendor,desc:desc,amt:amt,pay:paySel,dt:dt});
+  if(editingId) {
+    entries = entries.map(function(e){ return e.id===editingId ? {id:editingId,cat:cat,vendor:vendor,desc:desc,amt:amt,pay:paySel,dt:dt} : e; });
+    editingId = null;
+    document.getElementById("save-btn").textContent = "Save Entry";
+    document.getElementById("cancel-btn").style.display = "none";
+  } else {
+    entries.unshift({id:Date.now(),cat:cat,vendor:vendor,desc:desc,amt:amt,pay:paySel,dt:dt});
+  }
   store(entries);
+  populateVendors();
   document.getElementById("cat").value="";
   document.getElementById("vendor").value="";
   document.getElementById("desc").value="";
@@ -319,6 +357,27 @@ function renderLog() {
       sum.classList.toggle("on",!open);
       ent.classList.toggle("on",!open);
       chev.textContent = open?"▼":"▲";
+      return;
+    }
+    var edit = e.target.closest(".edit-btn");
+    if(edit){
+      var id = parseInt(edit.getAttribute("data-id"));
+      var entry = load().find(function(x){return x.id===id;});
+      if(!entry) return;
+      editingId = id;
+      document.getElementById("cat").value = entry.cat||"";
+      document.getElementById("vendor").value = entry.vendor||"";
+      document.getElementById("desc").value = entry.desc||"";
+      document.getElementById("amt").value = entry.amt||"";
+      document.getElementById("dt").value = entry.dt||today();
+      document.querySelectorAll(".pbtn").forEach(function(b){
+        b.classList.toggle("on", b.getAttribute("data-pay")===entry.pay);
+      });
+      paySel = entry.pay||"";
+      document.getElementById("save-btn").textContent = "Update Entry";
+      document.getElementById("cancel-btn").style.display = "block";
+      document.getElementById("tab-add").click();
+      window.scrollTo(0,0);
       return;
     }
     var del = e.target.closest(".del-btn");
