@@ -84,7 +84,7 @@ input:focus,select:focus{border-color:#1565c0}
     <select id="cat">
       <option value="">Select category…</option>
       <option>Day to Day</option>
-      <option>Housing</option><option>Utilities</option><option>Services</option>
+      <option>House and Garden</option><option>Utilities</option><option>Services</option>
       <option>Protection</option><option>Savings</option><option>Investments</option>
       <option>Pensions</option><option>Healthcare</option>
       <option>Family</option><option>Travel</option><option>Holidays</option>
@@ -254,7 +254,7 @@ function getPeriodLabel(p) {
 
 function renderLog() {
   var all = load();
-  var CATS=["Day to Day","Housing","Utilities","Services","Protection","Savings","Investments","Pensions","Healthcare","Family","Travel","Holidays","Hobbies","Charitable","Other"];
+  var CATS=["Day to Day","Housse and Garden","Utilities","Services","Protection","Savings","Investments","Pensions","Healthcare","Family","Travel","Holidays","Hobbies","Charitable","Other"];
   var usedCats=["All"].concat(CATS.filter(function(c){return all.some(function(e){return e.cat===c;});}));
   var fDiv=document.getElementById("filters");
   fDiv.innerHTML=usedCats.map(function(c){
