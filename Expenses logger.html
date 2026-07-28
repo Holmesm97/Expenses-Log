@@ -84,21 +84,27 @@ input:focus,select:focus{border-color:#1565c0}
     <select id="cat">
       <option value="">Select category…</option>
       <option>Day to Day</option>
-      <option>House and Garden</option><option>Utilities</option><option>Services</option>
-      <option>Insurance</option><option>Savings</option><option>Investments</option>
-      <option>Pensions</option><option>Healthcare</option>
-      <option>Family</option><option>Travel</option><option>Holidays</option>
-      <option>Hobbies</option><option>Charitable</option><option>Other</option>
+      <option>Food</option>
+      <option>House and Garden</option>
+      <option>Household</option>
+      <option>Healthcare</option>
+      <option>Family</option>
+      <option>Travel</option>
+      <option>Holidays</option>
+      <option>Hobbies</option>
+      <option>Savings</option>
+      <option>Charitable</option>
+      <option>Other</option>
     </select>
   </div>
   <div class="field">
     <label class="lbl">Vendor</label>
-    <input type="text" id="vendor" placeholder="e.g. Tesco, Amazon, BP…" maxlength="60" autocomplete="off" list="vendor-list">
+    <input type="text" id="vendor" placeholder="e.g. Tesco, Amazon, BP…" maxlength="60" autocomplete="off">
     <datalist id="vendor-list"></datalist>
   </div>
   <div class="field">
     <label class="lbl">Items / Description</label>
-    <input type="text" id="desc" placeholder="e.g. Weekly shop, fuel, printer ink…" maxlength="60" autocomplete="off" list="desc-list">
+    <input type="text" id="desc" placeholder="e.g. Weekly shop, fuel, printer ink…" maxlength="60" autocomplete="off">
     <datalist id="desc-list"></datalist>
   </div>
   <div class="field">
@@ -147,8 +153,12 @@ var paySel = "";
 var filterCat = "All";
 var editingId = null;
 
+var CATS = ["Day to Day","Food","House and Garden","Household","Healthcare","Family","Travel","Holidays","Hobbies","Savings","Charitable","Other"];
+
 document.getElementById("dt").value = today();
 populateSuggestions();
+setupTypeahead("vendor","vendor-list");
+setupTypeahead("desc","desc-list");
 
 function today() {
   var d = new Date();
@@ -167,12 +177,79 @@ function fmtAmt(n) {
 function load(){return JSON.parse(localStorage.getItem("explog")||"[]");}
 function store(d){localStorage.setItem("explog",JSON.stringify(d));}
 
+// Only attach datalist after user starts typing to prevent grey-frame bug on mobile
+function setupTypeahead(inputId, listId) {
+  var inp = document.getElementById(inputId);
+  inp.addEventListener("input", function() {
+    if(this.value.length > 0) {
+      this.setAttribute("list", listId);
+    } else {
+      this.removeAttribute("list");
+    }
+  });
+}
+
 function populateSuggestions() {
   var all = load();
-  var vendors = [...new Set(all.map(function(e){return e.vendor||"";}).filter(Boolean))].sort();
+  var vendors = [];
+  var vendorSeen = {};
+  all.forEach(function(e){ if(e.vendor && !vendorSeen[e.vendor]){ vendors.push(e.vendor); vendorSeen[e.vendor]=1; } });
+  vendors.sort();
   document.getElementById("vendor-list").innerHTML = vendors.map(function(v){return '<option value="'+v+'">';}).join("");
-  var descs = [...new Set(all.map(function(e){return e.desc||"";}).filter(Boolean))].sort();
+  var descs = [];
+  var descSeen = {};
+  all.forEach(function(e){ if(e.desc && !descSeen[e.desc]){ descs.push(e.desc); descSeen[e.desc]=1; } });
+  descs.sort();
   document.getElementById("desc-list").innerHTML = descs.map(function(d){return '<option value="'+d+'">';}).join("");
+}
+
+// Pay period: starts 3 working days before end of calendar month
+function getPayPeriodStart(year, month) {
+  var lastDay = new Date(year, month + 1, 0);
+  var daysBack = 3;
+  var d = new Date(lastDay);
+  while(daysBack > 0) {
+    d.setDate(d.getDate() - 1);
+    var dow = d.getDay();
+    if(dow !== 0 && dow !== 6) daysBack--;
+  }
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function getPeriodKey(dateStr) {
+  var d = new Date(dateStr);
+  d.setHours(0,0,0,0);
+  var year = d.getFullYear();
+  var month = d.getMonth();
+  var start = getPayPeriodStart(year, month);
+  if(d >= start) {
+    return year + "-" + ("0"+month).slice(-2);
+  } else {
+    var pm = month === 0 ? 11 : month - 1;
+    var py = month === 0 ? year - 1 : year;
+    return py + "-" + ("0"+pm).slice(-2);
+  }
+}
+
+function getCurrentPeriodKey() {
+  return getPeriodKey(today());
+}
+
+function getPeriodLabel(key) {
+  var parts = key.split("-");
+  var year = parseInt(parts[0]);
+  var month = parseInt(parts[1]);
+  var nm = month === 11 ? 0 : month + 1;
+  var ny = month === 11 ? year + 1 : year;
+  var start = getPayPeriodStart(year, month);
+  var nextStart = getPayPeriodStart(ny, nm);
+  var end = new Date(nextStart.getTime() - 86400000);
+  var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var startStr = start.getDate() + " " + MONTHS[start.getMonth()];
+  if(start.getFullYear() !== end.getFullYear()) startStr += " " + start.getFullYear();
+  var endStr = end.getDate() + " " + MONTHS[end.getMonth()] + " " + end.getFullYear();
+  return startStr + " \u2013 " + endStr;
 }
 
 // Tabs
@@ -240,52 +317,45 @@ document.getElementById("save-btn").addEventListener("click", function() {
   setTimeout(function(){t.style.display="none";},1800);
 });
 
-function getPeriod(dateStr) {
-  var now = new Date(); now.setHours(0,0,0,0);
-  var d = new Date(dateStr); d.setHours(0,0,0,0);
-  var diff = Math.floor((now-d)/(1000*60*60*24));
-  return Math.floor(diff/30);
-}
-function getPeriodLabel(p) {
-  if(p===0) return "Last 30 days";
-  if(p===1) return "31 – 60 days ago";
-  return (p*30+1)+" – "+((p+1)*30)+" days ago";
-}
-
 function renderLog() {
   var all = load();
-  var CATS=["Day to Day","House and Garden","Utilities","Services","Insurance","Savings","Investments","Pensions","Healthcare","Family","Travel","Holidays","Hobbies","Charitable","Other"];
-  var usedCats=["All"].concat(CATS.filter(function(c){return all.some(function(e){return e.cat===c;});}));
-  var fDiv=document.getElementById("filters");
-  fDiv.innerHTML=usedCats.map(function(c){
+  var usedCats = ["All"].concat(CATS.filter(function(c){return all.some(function(e){return e.cat===c;});}));
+  // Also include any categories in data not in CATS list (old entries)
+  all.forEach(function(e){
+    if(e.cat && usedCats.indexOf(e.cat) === -1) usedCats.push(e.cat);
+  });
+
+  var fDiv = document.getElementById("filters");
+  fDiv.innerHTML = usedCats.map(function(c){
     return '<button class="fbtn'+(c===filterCat?" on":"")+'" data-cat="'+c+'">'+c+'</button>';
   }).join("");
 
-  var shown=filterCat==="All"?all:all.filter(function(e){return e.cat===filterCat;});
+  var shown = filterCat==="All" ? all : all.filter(function(e){return e.cat===filterCat;});
   shown.sort(function(a,b){return b.dt.localeCompare(a.dt);});
-  document.getElementById("log-title").textContent=filterCat==="All"?"Expense Log ("+all.length+")":filterCat+" ("+shown.length+")";
+  document.getElementById("log-title").textContent = filterCat==="All" ? "Expense Log ("+all.length+")" : filterCat+" ("+shown.length+")";
 
-  var eDiv=document.getElementById("entries");
+  var eDiv = document.getElementById("entries");
   if(!shown.length){eDiv.innerHTML='<div class="empty">No entries yet</div>';return;}
 
-  var periods={};
+  var currentKey = getCurrentPeriodKey();
+  var periods = {};
   shown.forEach(function(e){
-    var p=getPeriod(e.dt);
-    if(!periods[p]) periods[p]=[];
-    periods[p].push(e);
+    var k = getPeriodKey(e.dt);
+    if(!periods[k]) periods[k] = [];
+    periods[k].push(e);
   });
 
-  var html="";
-  Object.keys(periods).sort(function(a,b){return a-b;}).forEach(function(p){
-    var entries=periods[p];
-    var total=entries.reduce(function(t,e){return t+(parseFloat(e.amt)||0);},0);
-    var isOld=parseInt(p)>0;
-    var catTotals={};
+  var html = "";
+  Object.keys(periods).sort(function(a,b){return b.localeCompare(a);}).forEach(function(k){
+    var entries = periods[k];
+    var total = entries.reduce(function(t,e){return t+(parseFloat(e.amt)||0);},0);
+    var isCurrent = (k === currentKey);
+    var catTotals = {};
     entries.forEach(function(e){catTotals[e.cat]=(catTotals[e.cat]||0)+(parseFloat(e.amt)||0);});
-    var catRows=Object.entries(catTotals).sort(function(a,b){return b[1]-a[1];}).map(function(kv){
-      return '<div class="cat-row"><span>'+kv[0]+'</span><strong>'+fmtAmt(kv[1])+'</strong></div>';
+    var catRows = Object.keys(catTotals).sort(function(a,b){return catTotals[b]-catTotals[a];}).map(function(c){
+      return '<div class="cat-row"><span>'+c+'</span><strong>'+fmtAmt(catTotals[c])+'</strong></div>';
     }).join("");
-    var entryRows=entries.map(function(e){
+    var entryRows = entries.map(function(e){
       return '<div class="entry">'+
         '<div class="entry-left">'+
           '<div class="entry-cat">'+e.cat+'</div>'+
@@ -303,22 +373,22 @@ function renderLog() {
         '</div>'+
       '</div>';
     }).join("");
-    html+='<div class="period-block">'+
-      '<div class="period-hdr'+(isOld?" old":"")+'" data-period="'+p+'">'+
-        '<div class="period-title">'+getPeriodLabel(parseInt(p))+'</div>'+
+    html += '<div class="period-block">'+
+      '<div class="period-hdr'+(isCurrent?"":" old")+'" data-period="'+k+'">'+
+        '<div class="period-title">'+getPeriodLabel(k)+'</div>'+
         '<div style="display:flex;align-items:center;gap:6px">'+
           '<div class="period-stats">'+
             '<div class="period-total">'+fmtAmt(total)+'</div>'+
             '<div class="period-count">'+entries.length+' '+(entries.length===1?"entry":"entries")+'</div>'+
           '</div>'+
-          '<span class="period-chevron">'+(isOld?"▼":"▲")+'</span>'+
+          '<span class="period-chevron">'+(isCurrent?"▲":"▼")+'</span>'+
         '</div>'+
       '</div>'+
-      '<div class="period-summary'+(isOld?"":" on")+'" data-summary="'+p+'">'+catRows+'</div>'+
-      '<div class="period-entries'+(isOld?"":" on")+'" data-pent="'+p+'">'+entryRows+'</div>'+
+      '<div class="period-summary'+(isCurrent?" on":"")+'" data-summary="'+k+'">'+catRows+'</div>'+
+      '<div class="period-entries'+(isCurrent?" on":"")+'" data-pent="'+k+'">'+entryRows+'</div>'+
     '</div>';
   });
-  eDiv.innerHTML=html;
+  eDiv.innerHTML = html;
 }
 
 // Filters — set up once
@@ -334,9 +404,9 @@ document.getElementById("entries").addEventListener("click",function(e){
   var eDiv=document.getElementById("entries");
   var hdr=e.target.closest(".period-hdr");
   if(hdr){
-    var p=hdr.getAttribute("data-period");
-    var sum=eDiv.querySelector('[data-summary="'+p+'"]');
-    var ent=eDiv.querySelector('[data-pent="'+p+'"]');
+    var k=hdr.getAttribute("data-period");
+    var sum=eDiv.querySelector('[data-summary="'+k+'"]');
+    var ent=eDiv.querySelector('[data-pent="'+k+'"]');
     var chev=hdr.querySelector(".period-chevron");
     var open=sum.classList.contains("on");
     sum.classList.toggle("on",!open);
