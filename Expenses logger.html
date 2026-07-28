@@ -100,12 +100,10 @@ input:focus,select:focus{border-color:#1565c0}
   <div class="field">
     <label class="lbl">Vendor</label>
     <input type="text" id="vendor" placeholder="e.g. Tesco, Amazon, BP…" maxlength="60" autocomplete="off">
-    <datalist id="vendor-list"></datalist>
   </div>
   <div class="field">
     <label class="lbl">Items / Description</label>
     <input type="text" id="desc" placeholder="e.g. Weekly shop, fuel, printer ink…" maxlength="60" autocomplete="off">
-    <datalist id="desc-list"></datalist>
   </div>
   <div class="field">
     <label class="lbl">Amount</label>
@@ -156,9 +154,6 @@ var editingId = null;
 var CATS = ["Day to Day","Food","House and Garden","Household","Healthcare","Family","Travel","Holidays","Hobbies","Savings","Charitable","Other"];
 
 document.getElementById("dt").value = today();
-populateSuggestions();
-setupTypeahead("vendor","vendor-list");
-setupTypeahead("desc","desc-list");
 
 function today() {
   var d = new Date();
@@ -178,30 +173,8 @@ function load(){return JSON.parse(localStorage.getItem("explog")||"[]");}
 function store(d){localStorage.setItem("explog",JSON.stringify(d));}
 
 // Only attach datalist after user starts typing to prevent grey-frame bug on mobile
-function setupTypeahead(inputId, listId) {
-  var inp = document.getElementById(inputId);
-  inp.addEventListener("input", function() {
-    if(this.value.length > 0) {
-      this.setAttribute("list", listId);
-    } else {
-      this.removeAttribute("list");
-    }
-  });
-}
 
-function populateSuggestions() {
-  var all = load();
-  var vendors = [];
-  var vendorSeen = {};
-  all.forEach(function(e){ if(e.vendor && !vendorSeen[e.vendor]){ vendors.push(e.vendor); vendorSeen[e.vendor]=1; } });
-  vendors.sort();
-  document.getElementById("vendor-list").innerHTML = vendors.map(function(v){return '<option value="'+v+'">';}).join("");
-  var descs = [];
-  var descSeen = {};
-  all.forEach(function(e){ if(e.desc && !descSeen[e.desc]){ descs.push(e.desc); descSeen[e.desc]=1; } });
-  descs.sort();
-  document.getElementById("desc-list").innerHTML = descs.map(function(d){return '<option value="'+d+'">';}).join("");
-}
+function populateSuggestions() {}
 
 // Pay period: starts 3 working days before end of calendar month
 function getPayPeriodStart(year, month) {
