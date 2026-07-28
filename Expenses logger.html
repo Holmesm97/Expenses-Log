@@ -47,8 +47,7 @@ input:focus,select:focus{border-color:#1565c0}
 .period-chevron{font-size:12px;margin-left:8px;opacity:0.8}
 .period-summary{background:#e8f0fe;border-radius:0 0 10px 10px;padding:10px 14px;margin-top:-4px;display:none}
 .period-summary.on{display:block}
-.cat-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid rgba(21,101,192,0.1);cursor:pointer}
-.cat-row:hover{background:rgba(21,101,192,0.06);border-radius:4px}
+.cat-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid rgba(21,101,192,0.1)}
 .cat-row:last-child{border:none}
 .cat-row span{color:#444}
 .cat-row strong{color:#1565c0}
@@ -333,7 +332,7 @@ function renderLog() {
     var catTotals = {};
     entries.forEach(function(e){catTotals[e.cat]=(catTotals[e.cat]||0)+(parseFloat(e.amt)||0);});
     var catRows = Object.keys(catTotals).sort(function(a,b){return catTotals[b]-catTotals[a];}).map(function(c){
-      return '<div class="cat-row" data-cat="'+c+'"><span>'+c+'</span><strong>'+fmtAmt(catTotals[c])+'</strong></div>';
+      return '<div class="cat-row"><span>'+c+'</span><strong>'+fmtAmt(catTotals[c])+'</strong></div>';
     }).join("");
     var entryRows = entries.map(function(e){
       return '<div class="entry">'+
@@ -382,12 +381,6 @@ document.getElementById("filters").addEventListener("click",function(e){
 // Entries — set up once
 document.getElementById("entries").addEventListener("click",function(e){
   var eDiv=document.getElementById("entries");
-  var catRow=e.target.closest(".cat-row");
-  if(catRow){
-    filterCat=catRow.getAttribute("data-cat");
-    renderLog();
-    return;
-  }
   var hdr=e.target.closest(".period-hdr");
   if(hdr){
     var k=hdr.getAttribute("data-period");
