@@ -278,9 +278,13 @@ document.getElementById("pay-grid").addEventListener("click", function(e) {
 
 function resetForm() {
   editingId = null;
+  var vInp = document.getElementById("vendor");
+  var dInp = document.getElementById("desc");
+  vInp.value="";
+  vInp.removeAttribute("list");
+  dInp.value="";
+  dInp.removeAttribute("list");
   document.getElementById("cat").value="";
-  document.getElementById("vendor").value="";
-  document.getElementById("desc").value="";
   document.getElementById("amt").value="";
   document.getElementById("dt").value=today();
   document.querySelectorAll(".pbtn").forEach(function(b){b.classList.remove("on");});
